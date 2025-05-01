@@ -9,39 +9,56 @@ import CoreML
 import SwiftUI
 
 struct ContentView: View {
-    @State private var wakeUp = Date.now
+    @State private var wakeUp = defaultWakeTime
     @State private var sleepAmount = 8.0
     @State private var coffeeAmount = 1
     @State private var alertTitle = ""
     @State private var alertMessage = ""
     @State private var showAlert = false
     
+    static var defaultWakeTime: Date {
+        var compenents = DateComponents()
+        compenents.hour = 7
+        compenents.minute = 0
+        return Calendar.current.date(from: compenents) ?? .now
+    }
+    
     var body: some View {
         NavigationStack {
-            VStack{
-                Text("When do you want to wake up?")
-                    .font(.headline)
-                DatePicker("Please enter a date?", selection: $wakeUp, displayedComponents: .hourAndMinute)
-                    .labelsHidden()
+            Form {
+                VStack(alignment: .leading, spacing: 0){
+                    Text("When do you want to wake up?")
+                        .font(.headline)
+                    DatePicker("Please enter a date?", selection: $wakeUp, displayedComponents: .hourAndMinute)
+                        .labelsHidden()
+                }
                 
-                Text("Desired amount of sleep")
-                    .font(.headline)
-                Stepper("\(sleepAmount.formatted()) hours", value: $sleepAmount, in: 4...12, step: 0.25)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Desired amount of sleep")
+                        .font(.headline)
+                    Stepper("\(sleepAmount.formatted()) hours", value: $sleepAmount, in: 4...12, step: 0.25)
+                }
                 
-                Text("Daily coffee intake")
-                    .font(.headline)
-                Stepper("\(coffeeAmount) cup(s)", value: $coffeeAmount, in: 1...20)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Daily coffee intake")
+                        .font(.headline)
+                    Stepper("^[\(coffeeAmount) cup](inflect: true)", value: $coffeeAmount, in: 1...20)
+                    // ^[some String](inflect: true) add "s" if the string plural according to the coffeeAmount variable
+                }
             }
             .navigationTitle("BetterRest ⏾")
             .toolbar {
                 Button("Calculate", action: calculateBedtime)
             }
             .alert(alertTitle, isPresented: $showAlert) {
-                Button("OK"){}
+                Button("OK") {
+                    // does nothing
+                }
             } message: {
                 Text("\(alertMessage)")
             }
         }
+        
     }
     
     func calculateBedtime() {
