@@ -23,45 +23,8 @@ struct ContentView: View {
         return Calendar.current.date(from: compenents) ?? .now
     }
     
-    var body: some View {
-        NavigationStack {
-            Form {
-                VStack(alignment: .leading, spacing: 0){
-                    Text("When do you want to wake up?")
-                        .font(.headline)
-                    DatePicker("Please enter a date?", selection: $wakeUp, displayedComponents: .hourAndMinute)
-                        .labelsHidden()
-                }
-                
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Desired amount of sleep")
-                        .font(.headline)
-                    Stepper("\(sleepAmount.formatted()) hours", value: $sleepAmount, in: 4...12, step: 0.25)
-                }
-                
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Daily coffee intake")
-                        .font(.headline)
-                    Stepper("^[\(coffeeAmount) cup](inflect: true)", value: $coffeeAmount, in: 1...20)
-                    // ^[some String](inflect: true) add "s" if the string plural according to the coffeeAmount variable
-                }
-            }
-            .navigationTitle("BetterRest ⏾")
-            .toolbar {
-                Button("Calculate", action: calculateBedtime)
-            }
-            .alert(alertTitle, isPresented: $showAlert) {
-                Button("OK") {
-                    // does nothing
-                }
-            } message: {
-                Text("\(alertMessage)")
-            }
-        }
-        
-    }
-    
-    func calculateBedtime() {
+    var bedTime: String {
+        var message = ""
         do {
             let config = MLModelConfiguration()
             let model = try SleepCalculator(configuration: config)
@@ -74,14 +37,41 @@ struct ContentView: View {
             
             let sleepTime = wakeUp - predection.actualSleep
    
-            alertTitle = "Your idle bed time is..."
-            alertMessage = sleepTime.formatted(date: .omitted, time: .shortened)
-//            print(alertMessage)
+            message = sleepTime.formatted(date: .omitted, time: .shortened)
         } catch {
-            alertTitle = "Error"
-            alertMessage = "Sorry, there was a problem calculating your bedtime."
+            message = "Sorry, there was a problem calculating your bedtime."
         }
-        showAlert = true
+        return message
+    }
+
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("When do you want to wake up?") {
+                    DatePicker("Please enter a date?", selection: $wakeUp, displayedComponents: .hourAndMinute)
+                        .labelsHidden()
+                }
+                Section("Desired amount of sleep") {
+                    Stepper("\(sleepAmount.formatted()) hours", value: $sleepAmount, in: 4...12, step: 0.25)
+                }
+                Section("Daily coffee intake") {
+//                    Stepper("^[\(coffeeAmount) cup](inflect: true)", value: $coffeeAmount, in: 1...20)
+
+                    Picker("Daily coffee intake", selection: $coffeeAmount) {
+                        ForEach(1..<21) {
+                            Text("^[\($0) cup](inflect: true)")
+                        }
+                    }
+                    
+                    // ^[some String](inflect: true) add "s" if the string plural according to the coffeeAmount variable
+                }
+                Section("↓ Your idle sleep time is ↓") {
+                    Text("\(bedTime)")
+                }
+            }
+            .navigationTitle("BetterRest ⏾")
+        }
     }
 }
 
